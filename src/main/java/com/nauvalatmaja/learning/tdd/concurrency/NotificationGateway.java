@@ -1,4 +1,4 @@
-package com.nauvalatmaja.learning.tdd.concurrentcy;
+package com.nauvalatmaja.learning.tdd.concurrency;
 
 public interface NotificationGateway {
 
