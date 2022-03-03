@@ -15,6 +15,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.nauvalatmaja.learning.tdd.concurrency.notification.NotificationTrace;
+
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,10 +42,12 @@ class FireAndForgetTest {
     private NotificationGateway notification;
     private NotificationHandler handler;
     private ExecutorService executor;
+    private NotificationTrace<String> trace;
 
     @BeforeEach
     void setup() {
         notification = mock(NotificationGateway.class);
+        trace = new NotificationTrace<>();
 
         executor = Executors.newFixedThreadPool(5);
         
@@ -74,6 +79,18 @@ class FireAndForgetTest {
         }
     }
 
+    @RequiredArgsConstructor
+    @Builder
+    public static class Logger {
+        private final long start;
+        
+        public void logExecution(Thread thread, String message) {
+            System.out.printf("[thread %s] %s after [%s ms] from intial execution time\n",
+                thread.getName(), message, System.currentTimeMillis() - start);
+        }
+        
+    }
+
     @Nested
     class UsingPoller {
         @SneakyThrows
@@ -93,15 +110,22 @@ class FireAndForgetTest {
         }
     }
 
-    @RequiredArgsConstructor
-    @Builder
-    public static class Logger {
-        private final long start;
-        
-        public void logExecution(Thread thread, String message) {
-            System.out.printf("[thread %s] %s after [%s ms] from intial execution time\n",
-                thread.getName(), message, System.currentTimeMillis() - start);
+    @Nested
+    class UsingNotification {
+        @SneakyThrows
+        @Test
+        void givenAList_whenFire_shouldCallNotificationGateway() {
+            trace.setTimeoutMs(10000L);
+            doAnswer(invocation -> {
+                Thread.sleep(1000);
+                trace.append(invocation.getArgument(0));
+                return null;
+            }).when(notification).fire(anyString());
+    
+            handler.handle(sendToAddresses);
+            String[] a = new String[sendToAddresses.size()];
+            trace.containsNotificationIn(Matchers.containsInAnyOrder(sendToAddresses.toArray(a)));
+            verify(notification, times(sendToAddresses.size())).fire(anyString());
         }
-        
     }
 }
