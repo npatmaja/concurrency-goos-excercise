@@ -39,7 +39,7 @@ public class NotificationTrace<T> {
 
     }
 
-    private String failureDescriptionFrom(Matcher<Iterable<? extends T>> criteria) {
+    private String failureDescriptionFrom(Matcher<? extends Object> criteria) {
         StringDescription description = new StringDescription();
 
         description.appendText("no message matching ")

@@ -2,6 +2,7 @@ package com.nauvalatmaja.learning.tdd.concurrency;
 
 import static com.nauvalatmaja.learning.tdd.concurrency.NotificationProbe.fireNotificationTo;
 import static com.nauvalatmaja.learning.tdd.concurrency.polling.Poller.assertEventually;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -17,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.nauvalatmaja.learning.tdd.concurrency.notification.NotificationTrace;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -77,6 +77,28 @@ class FireAndForgetTest {
             
             verify(notification, times(sendToAddresses.size())).fire(anyString());
         }
+
+        @Test
+        @SneakyThrows
+        void givenAList_whenHandleWithExecutor_shouldCallNotificationGateway() {
+            Logger log = Logger.builder().start(System.currentTimeMillis()).build();
+            
+            doAnswer(invocation -> {
+                log.logExecution(Thread.currentThread(), "executes notification#fire");
+                Thread.sleep(1000);
+                return null;
+            }).when(notification).fire(anyString());
+    
+            handler.handleWithExecutor(sendToAddresses);
+
+            executor.shutdown();
+            log.logExecution(Thread.currentThread(), "executor shutdown");
+            
+            executor.awaitTermination(10000, TimeUnit.MILLISECONDS);
+            log.logExecution(Thread.currentThread(), "executor terminated");
+            
+            verify(notification, times(sendToAddresses.size())).fire(anyString());
+        }
     }
 
     @RequiredArgsConstructor
@@ -85,7 +107,7 @@ class FireAndForgetTest {
         private final long start;
         
         public void logExecution(Thread thread, String message) {
-            System.out.printf("[thread %s] %s after [%s ms] from intial execution time\n",
+            System.out.printf("[thread %s] %s after [%s ms] from initial execution time\n",
                 thread.getName(), message, System.currentTimeMillis() - start);
         }
         
@@ -93,6 +115,21 @@ class FireAndForgetTest {
 
     @Nested
     class UsingPoller {
+        @SneakyThrows
+        @Test
+        void givenAList_whenHandleWithExecutor_shouldCallNotificationGateway() {
+            doAnswer(invocation -> {
+                Thread.sleep(1000);
+                return null;
+            }).when(notification).fire(anyString());
+    
+            handler.handleWithExecutor(sendToAddresses);
+            
+            assertEventually(
+                fireNotificationTo(notification, is(sendToAddresses.size())),
+                10000L, 1000L);
+        }
+
         @SneakyThrows
         @Test
         void givenAList_whenFire_shouldCallNotificationGateway() {
@@ -106,7 +143,6 @@ class FireAndForgetTest {
             assertEventually(
                 fireNotificationTo(notification, is(sendToAddresses.size())),
                 10000L, 1000L);
-            verify(notification, times(sendToAddresses.size())).fire(anyString());
         }
     }
 
@@ -123,9 +159,29 @@ class FireAndForgetTest {
             }).when(notification).fire(anyString());
     
             handler.handle(sendToAddresses);
-            String[] a = new String[sendToAddresses.size()];
-            trace.containsNotificationIn(Matchers.containsInAnyOrder(sendToAddresses.toArray(a)));
-            verify(notification, times(sendToAddresses.size())).fire(anyString());
+
+            trace.containsNotificationIn(
+                containsInAnyOrder(convertToArray(sendToAddresses)));
+        }
+
+        private String[] convertToArray(List<String> list) {
+            return list.toArray(new String[list.size()]);
+        }
+
+        @SneakyThrows
+        @Test
+        void givenAList_whenHandleWithExecutor_shouldCallNotificationGateway() {
+            trace.setTimeoutMs(10000L);
+            doAnswer(invocation -> {
+                Thread.sleep(1000);
+                trace.append(invocation.getArgument(0));
+                return null;
+            }).when(notification).fire(anyString());
+    
+            handler.handleWithExecutor(sendToAddresses);
+
+            trace.containsNotificationIn(
+                containsInAnyOrder(convertToArray(sendToAddresses)));
         }
     }
 }

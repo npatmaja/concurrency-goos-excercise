@@ -27,7 +27,7 @@ public class Poller {
     private String describeFailureOf(Probe probe) {
         StringDescription description = new StringDescription();
         description.appendText("\nTried to look for:\n      ");
-        probe.describeAcceptenceCriteriaTo(description);
+        probe.describeAcceptanceCriteriaTo(description);
         description.appendText("\nbut:\n    ");
         probe.describeFailureTo(description);
         return description.toString();

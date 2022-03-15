@@ -1,0 +1,2 @@
+# Testing Asynchronous Code in Java
+An exercise based on the last two chapters of the [Growing Object-Oriented Software Guided by Tests](http://growing-object-oriented-software.com/). Please see [my personal blog](https://nauvalatmaja.com/2022/03/15/testing-asycnhronous-code-in-java/) for the detailed discussion.

@@ -30,7 +30,7 @@ public class NotificationProbe {
             }
 
             @Override
-            public void describeAcceptenceCriteriaTo(Description d) {
+            public void describeAcceptanceCriteriaTo(Description d) {
                 d.appendText("notification")
                 .appendText(" has been called ")
                 .appendDescriptionOf(matcher);

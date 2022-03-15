@@ -15,10 +15,21 @@ public class NotificationHandler {
         this.executor = executor;
     }
 
-    public void handle(List<String> sendToAddresses) {
+    public void handle(List<String> recipients) {
         CompletableFuture.runAsync(() -> {
-            sendToAddresses.parallelStream().forEach(this::sendNotification);
+            recipients.parallelStream().forEach(this::sendNotification);
         }, executor);
+    }
+
+    public void handleWithExecutor(List<String> recipients) {
+        for (String recipient : recipients) {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    sendNotification(recipient);
+                }
+            });
+        }
     }
 
     @SneakyThrows

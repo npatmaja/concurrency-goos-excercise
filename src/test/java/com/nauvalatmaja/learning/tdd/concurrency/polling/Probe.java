@@ -5,6 +5,6 @@ import org.hamcrest.Description;
 public interface Probe {
     boolean isSatisfied();
     void sample();
-    void describeAcceptenceCriteriaTo(Description d);
+    void describeAcceptanceCriteriaTo(Description d);
     void describeFailureTo(Description d);
 }
